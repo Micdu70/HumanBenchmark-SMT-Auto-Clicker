@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 from datetime import datetime
 from PIL import ImageGrab
@@ -6,6 +7,8 @@ from pynput import mouse
 from pynput.keyboard import Controller as KeyboardController, Listener as KeyboardListener
 from pynput.mouse import Button, Controller as MouseController, Listener as MouseListener
 from time import sleep
+
+script_version = 1.1
 
 # Global 'bool' vars
 config_done = False
@@ -18,65 +21,98 @@ in_playing_seq = False
 in_autoplay_mode = False
 saving_seq = False
 
-# Global 'int' vars
-cx = 0
-cy = 0
-
-# Global 'list' vars
-saved_config = []
+# Global 'list' var for the sequence
 saved_seq = []
+
+# Global 'tuple' var for the configuration
+saved_config = ()
+
+# Global 'tuple' vars for cases position
+case_1_pos = ()
+case_2_pos = ()
+case_3_pos = ()
+case_4_pos = ()
+case_5_pos = ()
+case_6_pos = ()
+case_7_pos = ()
+case_8_pos = ()
+case_9_pos = ()
 
 def reset_config():
     global config_done
     config_done = False
     global config_b_done
     config_b_done = False
-    global saved_config
-    saved_config.clear()
 
-def set_config(c):
-    global cx, cy
+def get_case_pos(n):
+    match n:
+        case 1:
+            return case_1_pos
+        case 2:
+            return case_2_pos
+        case 3:
+            return case_3_pos
+        case 4:
+            return case_4_pos
+        case 5:
+            return case_5_pos
+        case 6:
+            return case_6_pos
+        case 7:
+            return case_7_pos
+        case 8:
+            return case_8_pos
+        case 9:
+            return case_9_pos
+        case _:
+            print("")
+            print("Unknown case number! How is it even possible???")
+            print("")
+            os.system("pause")
+            sys.exit(1)
+
+def set_case_pos(x1, x2, x3, y1, y2, y3):
+    global case_1_pos
+    case_1_pos = (x1, y1)
+    global case_2_pos
+    case_2_pos = (x2, y1)
+    global case_3_pos
+    case_3_pos = (x3, y1)
+    global case_4_pos
+    case_4_pos = (x1, y2)
+    global case_5_pos
+    case_5_pos = (x2, y2)
+    global case_6_pos
+    case_6_pos = (x3, y2)
+    global case_7_pos
+    case_7_pos = (x1, y3)
+    global case_8_pos
+    case_8_pos = (x2, y3)
+    global case_9_pos
+    case_9_pos = (x3, y3)
+
+def set_config(c, cx, cy):
     global saved_config
     if c == 1:
-        c1x = c4x = c7x = cx
-        c2x = c5x = c8x = cx + 130
-        c3x = c6x = c9x = cx + 260
-        c1y = c2y = c3y = cy
-        c4y = c5y = c6y = cy - 130
-        c7y = c8y = c9y = cy - 260
+        x1 = cx
+        x2 = x1 + 130
+        x3 = x2 + 130
+        y1 = cy
+        y2 = y1 - 130
+        y3 = y2 - 130
+        saved_config = (x1, y1)
     else: # c == 2
-        c1x = c4x = c7x = saved_config[0]
-        c2x = c5x = c8x = c1x + ((cx - c1x) / 2)
-        c3x = c6x = c9x = cx
-        c1y = c2y = c3y = saved_config[1]
-        c4y = c5y = c6y = c1y - ((c1y - cy) / 2)
-        c7y = c8y = c9y = cy
-    saved_config = [c1x, c1y, c2x, c2y, c3x, c3y, c4x, c4y, c5x, c5y, c6x, c6y, c7x, c7y, c8x, c8y, c9x, c9y]
+        x3 = cx
+        x1 = saved_config[0]
+        x2 = (x1 + x3) / 2
+        y3 = cy
+        y1 = saved_config[1]
+        y2 = (y1 + y3) / 2
+        saved_config = (x1, y1, x3, y3)
+    set_case_pos(x1, x2, x3, y1, y2, y3)
     if c == 2:
         global config_b_done
         config_b_done = True
-
-def case_pos(n):
-    global saved_config
-    if n == 1:
-        x, y = saved_config[0], saved_config[1]
-    elif n == 2:
-        x, y = saved_config[2], saved_config[3]
-    elif n == 3:
-        x, y = saved_config[4], saved_config[5]
-    elif n == 4:
-        x, y = saved_config[6], saved_config[7]
-    elif n == 5:
-        x, y = saved_config[8], saved_config[9]
-    elif n == 6:
-        x, y = saved_config[10], saved_config[11]
-    elif n == 7:
-        x, y = saved_config[12], saved_config[13]
-    elif n == 8:
-        x, y = saved_config[14], saved_config[15]
-    else: # n == 9
-        x, y = saved_config[16], saved_config[17]
-    return x, y
 
 def test_config():
     m = MouseController()
@@ -84,7 +120,7 @@ def test_config():
     while in_test_config:
         for case_num in range(1, 10):
             if not in_test_config: return
-            m.position = case_pos(case_num)
+            m.position = get_case_pos(case_num)
             sleep(1)
 
 def play_seq(autoplay_mode = False):
@@ -99,11 +135,12 @@ def play_seq(autoplay_mode = False):
             if not in_autoplay_mode: return
         else:
             if not in_playing_seq: return
-        m.position = case_pos(case_num)
+        m.position = get_case_pos(case_num)
         m.press(Button.left)
         m.release(Button.left)
         sleep(0.2)
     if not autoplay_mode:
+        m.position = (0, 0)
         print("")
         print("== Sequence ended! ==")
         print("")
@@ -187,11 +224,11 @@ def autoplay_mode():
                     print("")
                     print("Press 'A' Key to continue...")
                     kb = KeyboardController()
-                    kb.press('a')
-                    kb.release('a')
+                    kb.press("a")
+                    kb.release("a")
                     return
             try:
-                px_color = ImageGrab.grab().getpixel(case_pos(case_num))
+                px_color = ImageGrab.grab().getpixel(get_case_pos(case_num))
             except:
                 px_color = (0, 0, 0)
             if px_color == (255, 255, 255):
@@ -214,8 +251,8 @@ def autoplay_mode():
                             print("")
                             print("Press 'A' Key to continue...")
                             kb = KeyboardController()
-                            kb.press('a')
-                            kb.release('a')
+                            kb.press("a")
+                            kb.release("a")
                             return
                         saving_seq = True
                         saved_seq.append(rec_seq[-1])
@@ -236,22 +273,16 @@ def on_click(x, y, button, pressed):
     if button == mouse.Button.left:
         # print(f"({x}, {y})")
         global in_config_b, config_done, in_config_a
-        if in_config_b or (not config_done and in_config_a):
-            if pressed:
-                global cx, cy
-                cx = x; cy = y
-                return
+        if (in_config_b or (not config_done and in_config_a)) and not pressed:
             if not in_config_b:
-                set_config(1)
+                set_config(1, x, y)
             else:
-                set_config(2)
+                set_config(2, x, y)
             print("")
             print("== End of configuration ==")
             print("")
             print("==============================================")
-            print("")
             print("Press 'T' Key to Test the configuration")
-            print("")
             print("==============================================")
             print("")
             print("IMPORTANT:")
@@ -271,9 +302,7 @@ def on_click(x, y, button, pressed):
                 print("If the test is still failing for you, press 'R' Key to Restart the configuration")
             print("")
             print("==============================================")
-            print("")
             print("You can now use your Keyboard Numpad to save sequences")
-            print("")
             print("==============================================")
             print("")
             print("Press 'A' Key to Automatically play the game!(*)")
@@ -298,7 +327,7 @@ def on_click(x, y, button, pressed):
 def on_release(key):
     global config_done, in_config_a, in_config_b, listening_in_pause, in_test_config, in_playing_seq, in_autoplay_mode, saved_seq
     if listening_in_pause: return
-    if hasattr(key, 'vk'):
+    if hasattr(key, "vk"):
         # print(key.vk)
         if not in_config_b and not config_done:
             if key.vk == 67: # 'C' Key
@@ -320,7 +349,7 @@ def on_release(key):
                     os.system("cls")
                     print("")
                     print("")
-                    print("==== HumanBenchmark SMT Auto-Clicker v1.0 ====")
+                    print(f"==== HumanBenchmark SMT Auto-Clicker v{script_version} ====")
                     print("")
                     print("== Import configuration ==")
                     print("")
@@ -328,7 +357,7 @@ def on_release(key):
                     os.system("cls")
                     print("")
                     print("")
-                    print("==== HumanBenchmark SMT Auto-Clicker v1.0 ====")
+                    print(f"==== HumanBenchmark SMT Auto-Clicker v{script_version} ====")
                     print("")
                     print("== Import configuration ==")
                     print("")
@@ -341,14 +370,13 @@ def on_release(key):
                             pos_list = conf_line.strip().split(" ")
                             for i, pos in enumerate(pos_list):
                                 if not pos: del pos_list[i]
-                            if len(pos_list) == 2 or len(pos_list) == 4:
-                                global cx, cy
-                                cx = int(pos_list[0]); cy = int(pos_list[1])
-                                set_config(1)
-                                if len(pos_list) == 4:
-                                    cx = int(pos_list[2]); cy = int(pos_list[3])
-                                    set_config(2)
-                                    print("== Configuration imported! ==")
+                            has_two_pos = len(pos_list) == 2
+                            has_four_pos = len(pos_list) == 4
+                            if has_two_pos or has_four_pos:
+                                set_config(1, int(pos_list[0]), int(pos_list[1]))
+                                if has_four_pos:
+                                    set_config(2, int(pos_list[2]), int(pos_list[3]))
+                                print("== Configuration imported! ==")
                             else:
                                 conf_line = ""
                                 print("== Failed to import configuration! ==")
@@ -360,12 +388,10 @@ def on_release(key):
                         print("== No exportation code entered! ==")
                     print("")
                     print("==============================================")
-                    print("")
                     if conf_line:
                         print("Press 'T' Key to Test the configuration")
                     else:
                         print("Press 'I' Key to Import the configuration")
-                    print("")
                     print("==============================================")
                     print("")
                     if conf_line:
@@ -382,9 +408,7 @@ def on_release(key):
                         print("Press 'R' Key to Restart the configuration")
                         print("")
                         print("==============================================")
-                        print("")
                         print("You can now use your Keyboard Numpad to save sequences")
-                        print("")
                         print("==============================================")
                         print("")
                         print("Press 'A' Key to Automatically play the game!(*)")
@@ -522,11 +546,10 @@ def on_release(key):
                         print("")
                         print("Save this exportation code (spaces between numbers are important!):")
                         print("")
-                        global saved_config
                         if not config_b_done:
                             print(f"{saved_config[0]} {saved_config[1]}")
                         else:
-                            print(f"{saved_config[0]} {saved_config[1]} {saved_config[16]} {saved_config[17]}")
+                            print(f"{saved_config[0]} {saved_config[1]} {saved_config[2]} {saved_config[3]}")
                         print("")
                         print("==============================================")
                         return
@@ -608,9 +631,7 @@ def on_release(key):
                         print("=== Configuration reset! ===")
                         print("")
                         print("==============================================")
-                        print("")
                         print("Press 'I' Key to Import the configuration")
-                        print("")
                         print("==============================================")
                         print("")
                         print("== Configuration in 3 Steps ==")
@@ -623,12 +644,21 @@ def on_release(key):
                         return
 
 def main():
+    if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 10):
+        print("")
+        print("")
+        print(f"==== HumanBenchmark SMT Auto-Clicker v{script_version} ====")
+        print("")
+        print("Please run this script using Python 3.10 or higher...")
+        print("")
+        os.system("pause")
+        sys.exit(1)
     print("")
     print("")
-    print("==== HumanBenchmark SMT Auto-Clicker v1.0 ====")
+    print(f"==== HumanBenchmark SMT Auto-Clicker v{script_version} ====")
     print("")
+    print("==============================================")
     print("Press 'I' Key to Import the configuration")
-    print("")
     print("==============================================")
     print("")
     print("== Configuration in 3 Steps ==")
