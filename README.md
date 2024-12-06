@@ -4,7 +4,7 @@ Link to play the game: https://humanbenchmark.com/tests/sequence
 
 # Requirements
 
-- Python 3.10 or higher **[Latest version (3.12.1) recommended!]**
+- Install the latest Python 3.12.x version
 - Install required Python modules by using this command: `python -m pip install Pillow pynput`
 
 # Changelog
